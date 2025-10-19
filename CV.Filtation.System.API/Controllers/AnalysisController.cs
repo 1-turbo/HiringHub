@@ -171,51 +171,6 @@ public class AnalysisController : ControllerBase
         }
     }
 
-    [HttpPost("similarty_score")]
-    public async Task<ActionResult<AnalysisResultDto>> Similarty_Score(string userId, int jobId)
-    {
-        try
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return NotFound("User not found");
-
-            if (string.IsNullOrEmpty(user.CV_FilePath))
-                return BadRequest("User has no CV uploaded");
-
-            var webRootPath = _hostingEnvironment.WebRootPath;
-            var cvPath = Path.Combine(webRootPath, "CVs", Path.GetFileName(user.CV_FilePath));
-
-            if (!System.IO.File.Exists(cvPath))
-                return NotFound("CV file not found in storage");
-
-            var job = await _jobPostingService.GetJobPostingByIdAsync(jobId);
-            if (job == null) return NotFound("Job not found");
-
-            if (string.IsNullOrWhiteSpace(job.Description))
-                return BadRequest("Job has no description");
-
-            var cvBytes = await System.IO.File.ReadAllBytesAsync(cvPath);
-            var fileName = Path.GetFileName(user.CV_FilePath);
-
-            // 4. Call external analysis service
-            var analysisResult = await _analysisService.GetSimilartyScoremprove(cvBytes, fileName, job.Description);
-
-            if (analysisResult == null || string.IsNullOrWhiteSpace(analysisResult.similarity_score))
-                return NotFound("Could not analyze resume");
-
-            // 5. Return results
-            return Ok(new AnalysisResultDto
-            {
-                Suggestions = analysisResult.similarity_score,
-                AnalysisDate = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error analyzing resume for user {UserId} and job {JobId}", userId, jobId);
-            return StatusCode(500, "Error analyzing resume");
-        }
-    }
 
 }
 

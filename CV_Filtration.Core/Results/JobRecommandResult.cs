@@ -2,7 +2,7 @@
 {
     public class JobRecommandResult
     {
-        public List<string> RecommendedPositions { get; set; }
+        public string job_title { get; set; }
 
     }
 }

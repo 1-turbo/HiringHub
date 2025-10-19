@@ -57,7 +57,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
                         .IsUnique()
                         .HasFilter("[Email] IS NOT NULL");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.JobApplication", b =>
@@ -89,7 +89,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("JobApplication");
+                    b.ToTable("JobApplication", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.JobPosting", b =>
@@ -128,7 +128,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("JobPostings");
+                    b.ToTable("JobPostings", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.Skill", b =>
@@ -144,7 +144,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasKey("SkillId");
 
-                    b.ToTable("Skills");
+                    b.ToTable("Skills", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.User", b =>
@@ -251,7 +251,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("UserCompanies");
+                    b.ToTable("UserCompanies", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.UserFavoriteJob", b =>
@@ -269,7 +269,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasIndex("JobPostingId");
 
-                    b.ToTable("UserFavoriteJobs");
+                    b.ToTable("UserFavoriteJobs", (string)null);
                 });
 
             modelBuilder.Entity("CV_Filtation_System.Core.Entities.UserSkill", b =>
@@ -284,7 +284,7 @@ namespace CV_Filtation_System.Repository.Data.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("UserSkills");
+                    b.ToTable("UserSkills", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

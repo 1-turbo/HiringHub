@@ -4,19 +4,19 @@
     {
         public static async Task<string> SaveUploadedFileAsync(IFormFile file, string uploadFolder)
         {
-            if (file == null || Path.GetExtension(file.FileName).ToLower() != ".pdf")
-            {
-                return null; 
-            }
             Directory.CreateDirectory(uploadFolder);
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var filePath = Path.Combine(uploadFolder, fileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
+
+            // Generate safe filename
+            var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var filePath = Path.Combine(uploadFolder, uniqueFileName);
+
+            // Save file
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                await file.CopyToAsync(stream);
+                await file.CopyToAsync(fileStream);
             }
 
-            return fileName;
+            return uniqueFileName;
         }
     }
 }

@@ -55,11 +55,12 @@ namespace CV.Filtation.System.API.Controllers
                 WorkMode = dto.WorkMode,
             };
 
-            if (dto.JobImageUrl != null)
+            if (dto.JobImageUrl != null) // Renamed from JobImageUrl
             {
-                if (dto.JobImageUrl.Length > 5 * 1024 * 1024) // 5MB limit
+                // Validation checks
+                if (dto.JobImageUrl.Length > 5 * 1024 * 1024)
                 {
-                    return BadRequest("The image file is too large.");
+                    return BadRequest("The image file is too large (max 5MB).");
                 }
 
                 var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
@@ -69,9 +70,18 @@ namespace CV.Filtation.System.API.Controllers
                     return BadRequest("Invalid file type. Only image files are allowed.");
                 }
 
-                string uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "job_images");
-                string fileName = await FileUploadHelper.SaveUploadedFileAsync(dto.JobImageUrl, uploadFolder);
-                jobPosting.JobImageUrl = "/job_images/" + fileName;
+                // File upload logic
+                try
+                {
+                    string uploadFolder = Path.Combine(_hostingEnvironment.WebRootPath, "job_images");
+                    string fileName = await FileUploadHelper.SaveUploadedFileAsync(dto.JobImageUrl, uploadFolder);
+                    jobPosting.JobImageUrl = $"/job_images/{fileName}";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error uploading job image");
+                    return StatusCode(500, "Error saving job image");
+                }
             }
 
             _context.JobPostings.Add(jobPosting);
@@ -82,12 +92,15 @@ namespace CV.Filtation.System.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while creating the job posting.");
-                return StatusCode(500, "An unexpected error occurred. Please try again later.");
+                _logger.LogError(ex, "Error creating job posting");
+                return StatusCode(500, "An error occurred while saving the job posting");
             }
 
-            return CreatedAtAction(nameof(GetJobPostingById), new { id = jobPosting.JobPostingId }, jobPosting);
+            return CreatedAtAction(nameof(GetJobPostingById),
+                new { id = jobPosting.JobPostingId },
+                jobPosting);
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetJobPostingById(int id)
@@ -240,21 +253,40 @@ namespace CV.Filtation.System.API.Controllers
             var cvBytes = await global::System.IO.File.ReadAllBytesAsync(cvPath);
             var fileName = Path.GetFileName(user.CV_FilePath);
 
-            // Call updated service method
             var recommendationResult = await _analysisService.GetExpectedPosition(cvBytes, fileName);
 
-            if (recommendationResult == null ||
-                !recommendationResult.RecommendedPositions.Any())
+            if (recommendationResult == null || string.IsNullOrEmpty(recommendationResult.job_title))
             {
                 return NotFound("Could not generate job recommendations");
             }
 
-            // Return proper DTO with recommendations
-            return Ok(
-            new
+            var searchPattern = $"%{recommendationResult.job_title.ToLower()}%";
+
+            var matchingJobs = await _context.JobPostings
+                .Where(jp =>
+                    EF.Functions.Like(jp.Title.ToLower(), searchPattern) ||
+                    EF.Functions.Like(jp.Description.ToLower(), searchPattern))
+                .Select(jp => new
+                {
+                    title = jp.Title,
+                    location = jp.Location,
+                    salaryRange = jp.SalaryRange,
+                    description = jp.Description,
+                    jobType = jp.JobType,
+                    workMode = jp.WorkMode,
+                    jobImageUrl = jp.JobImageUrl,
+                    companyName = jp.Company != null ? jp.Company.Name : null,
+                    jobId = jp.JobPostingId
+                })
+                .ToListAsync();
+
+            return Ok(new
             {
-                recommendationResult.RecommendedPositions,
+                RecommendedTitle = recommendationResult.job_title,
+                MatchingJobs = matchingJobs
             });
         }
+
+
     }
 }
